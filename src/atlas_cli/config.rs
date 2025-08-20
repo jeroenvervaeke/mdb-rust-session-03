@@ -1,18 +1,13 @@
-use std::{collections::HashMap, str::FromStr};
-
-use serde::Deserialize;
-
-#[derive(Debug, Deserialize)]
 pub struct Config {
-    pub version: u32,
-    pub local_deployment_image: Option<String>,
-    pub mongosh_path: Option<String>,
-    pub telemetry_enabled: Option<bool>,
-    pub skip_update_check: Option<bool>,
-    #[serde(flatten)]
-    pub profiles: HashMap<String, Profile>,
+
 }
 
+
+// This will only work after step 0 is finished
+#[cfg(feature = "step_0")]
+use std::{str::FromStr};
+// Implement FromStr for Config using toml deserialization
+#[cfg(feature = "step_0")]
 impl FromStr for Config {
     type Err = toml::de::Error;
 
@@ -21,42 +16,25 @@ impl FromStr for Config {
     }
 }
 
-#[derive(Debug, Deserialize)]
-pub struct Profile {
-    pub auth_type: Option<AuthType>,
-    pub org_id: Option<String>,
-    pub project_id: Option<String>,
-    pub service: Option<String>,
-    pub output: Option<String>,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-pub enum AuthType {
-    #[serde(rename = "user_account")]
-    UserAccount,
-    #[serde(rename = "api_keys")]
-    ApiKeys,
-    #[serde(rename = "service_account")]
-    ServiceAccount,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    // Step 0: this test should pass when deserialize is implemented
+    // See: https://serde.rs/#data-structures
+    //
+    // Enable this test by adding the `step_0` feature to the default features section in `Cargo.toml`
+    #[cfg(feature = "step_0")]
     #[test]
     fn test_deserialize_00_empty() {
-        let config = Config::from_str(include_str!("../../fixtures/00_empty.toml"))
+        Config::from_str(include_str!("../../fixtures/00_empty.toml"))
             .expect("Deserialize should succeed");
-
-        assert_eq!(config.version, 2);
-        assert_eq!(config.local_deployment_image, None);
-        assert_eq!(config.mongosh_path, None);
-        assert_eq!(config.telemetry_enabled, None);
-        assert_eq!(config.skip_update_check, None);
-        assert_eq!(config.profiles.len(), 0);
     }
 
+    // Step 1: this test should pass when global properties are added
+    //
+    // Enable this test by adding the `step_1` feature to the default features section in `Cargo.toml`
+    #[cfg(feature = "step_1")]
     #[test]
     fn test_deserialize_01_global_properties() {
         let config = Config::from_str(include_str!("../../fixtures/01_global_properties.toml"))
@@ -73,9 +51,28 @@ mod tests {
         );
         assert_eq!(config.telemetry_enabled, Some(true));
         assert_eq!(config.skip_update_check, Some(true));
-        assert_eq!(config.profiles.len(), 0);
     }
 
+    // Step 2: this test should pass when profiles are added
+    // - Which data structure should be used to represent profiles?
+    //     - Which data type are we going to use to represent AuthType?
+    // - Which field attributes should we use on profile?
+    //   See: https://serde.rs/field-attrs.html
+    //
+    //   Hint, the config file looks like this:
+    //   ```plain
+    //   property_1 = "value_1"
+    //   property_2 = "value_2"
+    //   profile_1 = { property_1 = "value_1", property_2 = "value_2" }
+    //   ```
+    //
+    //   Profiles are properties with a complex data type (not string, number, boolean, etc.)
+    //   But each property can be a string, number, boolean, etc.
+    //
+    //   The solution is on the bottom of the file.
+    //
+    // Enable this test by adding the `step_2` feature to the default features section in `Cargo.toml`
+    #[cfg(feature = "step_2")]
     #[test]
     fn test_deserialize_02_user_account() {
         let config = Config::from_str(include_str!("../../fixtures/02_user_account.toml"))
@@ -100,6 +97,10 @@ mod tests {
         assert_eq!(profile_1.output, Some("json".to_string()));
     }
 
+    // Step 2: this test should pass when profiles are added
+    //
+    // Enable this test by adding the `step_2` feature to the default features section in `Cargo.toml`
+    #[cfg(feature = "step_2")]
     #[test]
     fn test_deserialize_03_all_options() {
         let config = Config::from_str(include_str!("../../fixtures/03_all_options.toml"))
@@ -153,3 +154,7 @@ mod tests {
         assert_eq!(profile_with_service_account.output, Some("txt".to_string()));
     }
 }
+
+// Required field attribute for profile:
+// #[serde(flatten)]
+// pub profiles: HashMap<String, Profile>,

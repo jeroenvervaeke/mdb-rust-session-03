@@ -4,6 +4,20 @@ version = "0.1.0"
 edition = "2024"
 exclude = ["fixtures/"]
 
+[features]
+# Replace default with the step number after finishing the step
+#
+# Examples:
+# After finishing step 0 this would be default = ["step_0"]
+# After step 1 it would be default = ["step_1"], etc.
+default = [] 
+
+# These features are used to enable/disable tests based on the step number
+# Enabling step_n will enable all previous steps
+step_0 = []
+step_1 = ["step_0"]
+step_2 = ["step_1"]
+
 [dependencies]
 anyhow = "1.0.99"
 dirs = "6.0.0"
